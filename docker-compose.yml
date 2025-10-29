@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "192.168.1.75:8001:8000"  # Слушаем 8001 на хосте, перенаправляем на 8000 в контейнере
+    volumes:
+      - ./backend:/app
+      - ./frontend/build:/app/frontend_build
+      - static_volume:/app/staticfiles
+    environment:
+      - DJANGO_SETTINGS_MODULE=info_pcs.settings
+    env_file:
+      - .env 
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 1 info_pcs.wsgi:application"  # Слушаем все интерфейсы ВНУТРИ контейнера
+
+volumes:
+  static_volume:
