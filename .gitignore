@@ -1,1 +1,7 @@
 .env
+*.pyc
+__pycache__/
+backend/accounts/__pycache__/
+backend/computers/__pycache__/
+backend/info_pcs/__pycache__/
+db.sqlite3
