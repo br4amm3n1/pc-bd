@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import ComputersPage from './pages/Computers/ComputersPage';
 import ChangesPage from './pages/Changes/ChangesPage';
@@ -24,13 +24,6 @@ import Register from './pages/Auth/Register';
 // });
 
 function App() {
-  const location = useLocation();
-  
-  // Если путь начинается с /admin, не рендерить React приложение
-  if (location.pathname.startsWith('/admin')) {
-    return null;
-  }
-
   return (
     <BrowserRouter>
         <Routes>
