@@ -13,6 +13,7 @@ services:
       - static_volume:/app/staticfiles
     environment:
       - DJANGO_SETTINGS_MODULE=info_pcs.settings
+      - DEBUG=False
     env_file:
       - .env 
     command: >
