@@ -25,7 +25,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build:prod": "NODE_ENV=production npm run build",
+    "build:prod": "GENERATE_SOURCEMAP=false NODE_ENV=production npm run build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
