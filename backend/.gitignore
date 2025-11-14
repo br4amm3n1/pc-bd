@@ -1,3 +1,4 @@
 db.sqlite3
 computers/__pycache__
 accounts/__pycache__
+info_pcs/__pycache__
