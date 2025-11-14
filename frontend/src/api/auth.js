@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.1.75:8001/api/accounts/',
+  baseURL: 'http://192.168.1.66:8001/api/accounts/',
 });
 
 export const checkTokenExpiration = (tokenData) => {

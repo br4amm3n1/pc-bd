@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     ports:
-      - "192.168.1.75:8001:8000"  # Слушаем 8001 на хосте, перенаправляем на 8000 в контейнере
+      - "192.168.1.66:8001:8000"  # Слушаем 8001 на хосте, перенаправляем на 8000 в контейнере
     volumes:
       - ./backend:/app
       - ./frontend/build:/app/frontend_build
