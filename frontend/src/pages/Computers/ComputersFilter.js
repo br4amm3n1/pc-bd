@@ -16,6 +16,7 @@ import DnsIcon from '@mui/icons-material/Dns';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AppsIcon from '@mui/icons-material/Apps';
 import SecurityIcon from '@mui/icons-material/Security';
+import PersonIcon from '@mui/icons-material/Person'
 
 export const ComputersFilter = ({ filters, onFilterChange, onClearFilters }) => {
   const hasFilters = Object.values(filters).some(value => value !== '' && value !== undefined);
@@ -46,7 +47,7 @@ export const ComputersFilter = ({ filters, onFilterChange, onClearFilters }) => 
 
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
         <TextField
-          label="Имя"
+          label="Имя компьютера"
           variant="outlined"
           size="small"
           value={filters.computer_name || ''}
@@ -72,6 +73,22 @@ export const ComputersFilter = ({ filters, onFilterChange, onClearFilters }) => 
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          label="ФИО пользователя"
+          variant="outlined"
+          size="small"
+          value={filters.pc_owner || ''}
+          onChange={(e) => onFilterChange('pc_owner', e.target.value)}
+          sx={{ width: 150 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <PersonIcon fontSize="small" color="action" />
               </InputAdornment>
             ),
           }}
