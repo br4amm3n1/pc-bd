@@ -109,17 +109,40 @@ export default function ComputersPage() {
 
   const handleExportCSVWrapper = async () => {
     try {
-      const data = await handleExportCSV(filters);
-      const url = window.URL.createObjectURL(new Blob([data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `computers_export_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode.removeChild(link);
-      showSnackbar('Экспорт в CSV выполнен успешно');
+      const blob = await handleExportCSV(filters);
+      
+      // Используем FileReader для чтения Blob и добавления BOM
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        // Добавляем BOM к содержимому
+        const BOM = '\uFEFF';
+        const content = BOM + e.target.result;
+        
+        // Создаем новый Blob с BOM
+        const newBlob = new Blob([content], { 
+          type: 'text/csv;charset=utf-8;' 
+        });
+        
+        // Скачиваем
+        const url = URL.createObjectURL(newBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `computers_export_${new Date().toISOString().slice(0,10)}.csv`;
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        URL.revokeObjectURL(url);
+        showSnackbar('Экспорт в CSV выполнен успешно');
+      };
+      
+      reader.readAsText(blob, 'UTF-8');
+      
     } catch (error) {
       console.error('Ошибка при экспорте:', error);
+      showSnackbar('Ошибка при экспорте в CSV', 'error');
     }
   };
 
