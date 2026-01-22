@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 
 export const useFilters = (computers, isLoading) => {
   const [filters, setFilters] = useState({});
-  const [filteredComputers, setFilteredComputers] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const applyFilters = useCallback(() => {
-    if (isLoading) return;
+   const filteredComputers = useMemo(() => {
+    if (isLoading || computers.length === 0) {
+      return [];
+    }
     
     let result = [...computers];
     
@@ -25,28 +26,24 @@ export const useFilters = (computers, isLoading) => {
       }
     });
     
-    setFilteredComputers(result);
+    return result;
   }, [computers, filters, isLoading]);
 
-  useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
-
-  const handleFilterChange = useCallback((field, value) => {
+  const handleFilterChange = (field, value) => {
     setFilters(prev => ({
       ...prev,
       [field]: value
     }));
-  }, []);
+  };
 
-  const handleClearFilters = useCallback(() => {
+  const handleClearFilters = () => {
     setFilters({});
-  }, []);
+  };
 
-  const toggleFilters = useCallback(() => {
+  const toggleFilters = () => {
     setFiltersOpen(prev => !prev);
-  }, []);
-
+  };
+  
   return {
     filters,
     filteredComputers,
