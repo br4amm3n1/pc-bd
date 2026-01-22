@@ -14,7 +14,7 @@ export const ComputersToolbar = ({
   onOpenImportModal
 }) => {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
       {isAuditor ? (
         <Button 
           variant="outlined" 
