@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 
 export const useFilters = (computers, isLoading) => {
   const [filters, setFilters] = useState({});
@@ -43,7 +43,7 @@ export const useFilters = (computers, isLoading) => {
   const toggleFilters = () => {
     setFiltersOpen(prev => !prev);
   };
-  
+
   return {
     filters,
     filteredComputers,
