@@ -1,6 +1,6 @@
 import React from 'react';
 import { Paper, Collapse, Divider } from '@mui/material';
-import { ComputersFilter } from './ComputersFilter';
+import { ComputersFilter } from '../../ComputersFilter';
 
 export const FiltersSection = ({
   filtersOpen,

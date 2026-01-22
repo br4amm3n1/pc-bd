@@ -6,7 +6,7 @@ import {
   deleteComputer,
   importComputersFromCSV,
   exportComputersToCSV 
-} from '../../api/computersApi';
+} from '../../../../api/computersApi'
 
 export const useComputersData = (showSnackbar) => {
   const [computers, setComputers] = useState([]);

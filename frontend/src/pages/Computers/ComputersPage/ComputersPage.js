@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useContext } from 'react';
-import { Box, Typography, CircularProgress, Snackbar } from '@mui/material';
-import ComputerForm from '../../components/ComputerForm';
-import CsvImportModal from './CsvImportModal';
+import { Box, Typography, CircularProgress, Snackbar, Alert } from '@mui/material';
+import ComputerForm from '../../../components/ComputerForm';
+import CsvImportModal from '../CsvImportModal';
 import { useSnackbar } from './hooks/useSnackbar';
 import { useComputersData } from './hooks/useComputersData';
 import { useFilters } from './hooks/useFilters';
@@ -9,7 +9,7 @@ import { useSelection } from './hooks/useSelection';
 import { ComputersTable } from './components/ComputersTable';
 import { ComputersToolbar } from './components/ComputersToolbar';
 import { FiltersSection } from './components/FiltersSection';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext } from '../../../context/AuthContext'
 
 export default function ComputersPage() {
   const { profile, isLoading: authLoading } = useContext(AuthContext);
