@@ -45,7 +45,27 @@ const logChange = async (computerId, action, changes = null) => {
 
 export const importComputersFromCSV = async (file) => {
   const formData = new FormData();
-  formData.append('file', file);
+  
+  // Читаем файл и убираем BOM если есть
+  const fileContent = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      let content = e.target.result;
+      // Удаляем BOM если он есть
+      if (content.charCodeAt(0) === 0xFEFF) {
+        content = content.substring(1);
+      }
+      resolve(content);
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+  
+  // Создаем новый Blob без BOM
+  const cleanBlob = new Blob([fileContent], { type: 'text/csv' });
+  const cleanFile = new File([cleanBlob], file.name, { type: 'text/csv' });
+  
+  formData.append('file', cleanFile);
 
   try {
     const response = await api.post('computers/import_csv/', formData, {
