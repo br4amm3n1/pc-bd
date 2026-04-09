@@ -1,5 +1,5 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout';
 import ComputersPage from './pages/Computers/ComputersPage';
 import ChangesPage from './pages/Changes/ChangesPage';
@@ -23,9 +23,24 @@ import Register from './pages/Auth/Register';
 //   },
 // });
 
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,  
+      gcTime: 10 * 60 * 1000,
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      placeholderData: (previousData) => previousData,
+    },
+  },
+});
+
 function App() {
   return (
-    <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <Routes>
           <Route path='/' element={<Layout />}>
             <Route path="login" element={<Login />} />
@@ -36,7 +51,9 @@ function App() {
             <Route path="/settings" element={<PrivateRoute><SettingsPage /></PrivateRoute>} /> */}
           </Route>
         </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
+    
   );
 }
 
