@@ -115,7 +115,6 @@ export const getComputer = async (id) => {
 export const createComputer = async (computerData) => {
   try {
     const response = await api.post('computers/', computerData);
-    // Логируем создание компьютера
     await logChange(response.data.id, 'create', computerData);
     return response.data;
   } catch (error) {
@@ -126,11 +125,9 @@ export const createComputer = async (computerData) => {
 
 export const updateComputer = async (id, computerData) => {
   try {
-    // Получаем текущие данные компьютера для сравнения
     const currentComputer = await getComputer(id);
     const response = await api.put(`computers/${id}/`, computerData);
-    
-    // Находим измененные поля
+
     const changes = {};
     Object.keys(computerData).forEach(key => {
       if (JSON.stringify(currentComputer[key]) !== JSON.stringify(computerData[key])) {
@@ -141,7 +138,6 @@ export const updateComputer = async (id, computerData) => {
       }
     });
     
-    // Логируем изменения, если они есть
     if (Object.keys(changes).length > 0) {
       await logChange(id, 'update', changes);
     }
@@ -155,11 +151,9 @@ export const updateComputer = async (id, computerData) => {
 
 export const patchComputer = async (id, computerData) => {
   try {
-    // Получаем текущие данные компьютера для сравнения
     const currentComputer = await getComputer(id);
     const response = await api.patch(`computers/${id}/`, computerData);
     
-    // Находим измененные поля
     const changes = {};
     Object.keys(computerData).forEach(key => {
       if (JSON.stringify(currentComputer[key]) !== JSON.stringify(computerData[key])) {
@@ -170,7 +164,6 @@ export const patchComputer = async (id, computerData) => {
       }
     });
     
-    // Логируем изменения, если они есть
     if (Object.keys(changes).length > 0) {
       await logChange(id, 'update', changes);
     }
@@ -184,10 +177,8 @@ export const patchComputer = async (id, computerData) => {
 
 export const deleteComputer = async (id) => {
   try {
-    // Получаем данные компьютера перед удалением
     const computer = await getComputer(id);
     
-    // Логируем удаление
     await logChange(id, 'delete', {
       computer_data: computer
     });
@@ -219,6 +210,42 @@ export const getComputersChanges = async () => {
   }
 };
 
+export const getChangesVersion = async () => {
+  try {
+    const response = await api.get('changes/version/');
+    return {
+      version: response.data.version,
+      totalCount: response.data.total_count,
+      lastModified: response.data.last_modified,
+      etag: response.data.etag
+    };
+  } catch (error) {
+    console.error('Version endpoint failed, trying HEAD request:', error);
+    
+    try {
+      const headResponse = await api.head('changes/');
+      return {
+        version: headResponse.headers['x-version'] || 
+                 headResponse.headers['etag'] || 
+                 Date.now().toString(),
+        totalCount: parseInt(headResponse.headers['x-total-count'] || '0'),
+        lastModified: headResponse.headers['last-modified'],
+        etag: headResponse.headers['etag']
+      };
+    } catch (headError) {
+      console.error('HEAD request failed, trying GET with limit:', headError);
+      const response = await api.get('changes/', { 
+        params: { limit: 1, ordering: '-change_date' }
+      });
+      return {
+        version: response.data[0]?.change_date || '0',
+        totalCount: response.data.length,
+        lastModified: response.data[0]?.change_date,
+        etag: null
+      };
+    }
+  }
+};
 
 export default {
   getComputers,
