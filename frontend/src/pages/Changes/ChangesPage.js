@@ -1,34 +1,25 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { 
-  Box, 
-  Typography, 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableContainer, 
-  TableHead, 
-  TableRow, 
-  Paper,
-  Chip,
-  Avatar,
-  Button,
-  Collapse,
-  Alert,
-  IconButton
+  Box, Typography, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, Paper,
+  Chip, Avatar, Button, Collapse, Alert, IconButton,
+  Tooltip, Badge, LinearProgress, Snackbar
 } from '@mui/material';
-import { Refresh as RefreshIcon, Close as CloseIcon } from '@mui/icons-material';
-import { getComputersChanges } from '../../api/computersApi';
-import { formatDateTime } from '../../utils/dateUtils';
+import { 
+  Refresh as RefreshIcon, 
+  Close as CloseIcon,
+  CloudQueue as CloudQueueIcon,
+  CheckCircle as CheckCircleIcon
+} from '@mui/icons-material';
+import { useChangesQuery, useRefreshChanges, useInvalidateChanges } from '../../hooks/useChangesQuery';
 import { AuthContext } from '../../context/AuthContext';
+import { formatDateTime } from '../../utils/dateUtils';
 import ChangesFilter from './ChangesFilter';
-import ChangeDescription from './ChangesFormat'
+import ChangeDescription from './ChangesFormat';
 import { parseDescription } from '../../utils/renderChangesUtils';
 
 export default function ChangesPage() {
-  const { user } = useContext(AuthContext); 
-  const [changes, setChanges] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { user } = useContext(AuthContext);
   const [filters, setFilters] = useState({
     computer_name: '',
     username: '',
@@ -36,55 +27,84 @@ export default function ChangesPage() {
     date_from: '',
     date_to: ''
   });
-  const [importInfo, setImportInfo] = useState({
-    open: false,
-    importedComputers: []
-  });
+  const [importInfo, setImportInfo] = useState({ open: false, importedComputers: [] });
+  const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
+  
+  // Используем React Query хуки
+  const { 
+    data: changes = [], 
+    isLoading, 
+    isFetching, 
+    isStale,
+    error,
+    refetch
+  } = useChangesQuery(filters);
+  
+  const refreshChanges = useRefreshChanges();
+  const invalidateChanges = useInvalidateChanges(); // Добавлен хук для инвалидации
 
+  // Мемоизированная фильтрация
+  const filteredChanges = useMemo(() => {
+    return changes.filter(change => {
+      const parsed = parseDescription(change.change_description);
+      const changeAction = parsed.action;
+
+      const matchesComputerName = !filters.computer_name || 
+        (change.computer_name && change.computer_name.toString().toLowerCase()
+          .includes(filters.computer_name.toLowerCase()));
+      const matchesUsername = !filters.username || 
+        change.user.username.toString().toLowerCase()
+          .includes(filters.username.toLowerCase());
+      const matchesAction = !filters.action || 
+        (changeAction && changeAction.toLowerCase() === filters.action.toLowerCase());
+      const matchesDateFrom = !filters.date_from || 
+        new Date(change.change_date) >= new Date(filters.date_from);
+      const matchesDateTo = !filters.date_to || 
+        new Date(change.change_date) <= new Date(filters.date_to + 'T23:59:59');
+
+      return matchesComputerName && matchesUsername && 
+             matchesAction && matchesDateFrom && matchesDateTo;
+    });
+  }, [changes, filters]);
+
+  // Поиск CSV импортов
   useEffect(() => {
-    fetchChanges();
-  }, []);
-
-  const fetchChanges = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await getComputersChanges();
-      
-      // Находим записи об импорте CSV
-      const csvImports = data.filter(change => 
-        change.change_description?.action === 'csv_import'
-      );
-      
-      if (csvImports.length > 0) {
-        const lastImport = csvImports[0];
-        setImportInfo({
-          open: true,
-          importedComputers: lastImport.change_description?.imported_computers || []
-        });
-      }
-      
-      setChanges(data);
-    } catch (err) {
-      setError('Не удалось загрузить историю изменений');
-    } finally {
-      setLoading(false);
+    const csvImports = changes.filter(change => {
+      const parsed = parseDescription(change.change_description);
+      return parsed?.action === 'csv_import';
+    });
+    
+    if (csvImports.length > 0) {
+      const lastImport = csvImports[0];
+      setImportInfo({
+        open: true,
+        importedComputers: lastImport.change_description?.imported_computers || []
+      });
     }
-  };
+  }, [changes]);
 
-  const handleCloseImportInfo = () => {
-    setImportInfo(prev => ({...prev, open: false}));
-  };
+  // Принудительное обновление с инвалидацией кэша
+  const handleForceRefresh = useCallback(async () => {
+    // Инвалидируем кэш - помечаем данные как устаревшие
+    invalidateChanges();
+    
+    // Принудительно перезапрашиваем
+    await refreshChanges();
+    
+    // Показываем уведомление об успешном обновлении
+    setShowRefreshSuccess(true);
+    setTimeout(() => setShowRefreshSuccess(false), 3000);
+  }, [invalidateChanges, refreshChanges]);
+
+  // Обычное обновление без инвалидации (просто проверка)
+  const handleSoftRefresh = useCallback(async () => {
+    await refreshChanges();
+    setShowRefreshSuccess(true);
+    setTimeout(() => setShowRefreshSuccess(false), 3000);
+  }, [refreshChanges]);
 
   const handleFilterChange = (field, value) => {
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleApplyFilters = () => {
-    fetchChanges();
+    setFilters(prev => ({ ...prev, [field]: value }));
   };
 
   const handleClearFilters = () => {
@@ -95,89 +115,153 @@ export default function ChangesPage() {
       date_from: '',
       date_to: ''
     });
-    fetchChanges();
   };
 
-  const filteredChanges = changes.filter(change => {
-    const parsed = parseDescription(change.change_description);
-    const changeAction = parsed.action;
+  const handleCloseImportInfo = () => {
+    setImportInfo(prev => ({ ...prev, open: false }));
+  };
 
-    const matchesComputerName = !filters.computer_name || 
-    (change.computer_name && change.computer_name.toString().toLowerCase().includes(filters.computer_name.toLowerCase()));
-    const matchesUsername = !filters.username || 
-      change.user.username.toString().toLowerCase().includes(filters.username.toLowerCase());
-    const matchesAction = !filters.action || 
-      (changeAction && changeAction.toLowerCase() === filters.action.toLowerCase());
-    const matchesDateFrom = !filters.date_from || 
-      new Date(change.change_date) >= new Date(filters.date_from);
-    const matchesDateTo = !filters.date_to || 
-      new Date(change.change_date) <= new Date(filters.date_to + 'T23:59:59'); // Учитываем весь день
-
-    return (
-      matchesComputerName &&
-      matchesUsername &&
-      matchesAction &&
-      matchesDateFrom &&
-      matchesDateTo
-    );
-  });
+  const showLoadingOverlay = isLoading || (isFetching && changes.length === 0);
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">История изменений</Typography>
-        <Button
-          variant="outlined"
-          startIcon={<RefreshIcon />}
-          onClick={fetchChanges}
-          disabled={loading}
-        >
-          Обновить
-        </Button>
+      {/* Snackbar для уведомления об успешном обновлении */}
+      <Snackbar
+        open={showRefreshSuccess}
+        autoHideDuration={3000}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert severity="success" icon={<CheckCircleIcon />}>
+          Данные успешно обновлены
+        </Alert>
+      </Snackbar>
+
+      {/* Индикатор фонового обновления */}
+      {isFetching && !isLoading && (
+        <LinearProgress sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }} />
+      )}
+
+      {/* Заголовок */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4" component="h1">
+            История изменений
+            {!isLoading && changes.length > 0 && (
+              <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 2 }}>
+                ({changes.length} записей)
+              </Typography>
+            )}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+            <Typography variant="caption" color="text.secondary">
+              {isStale ? 'Данные устарели' : 'Данные актуальны'}
+            </Typography>
+            <Badge 
+              color={isStale ? "warning" : "success"} 
+              variant="dot"
+              anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+            >
+              <CloudQueueIcon fontSize="small" color="action" />
+            </Badge>
+            {isFetching && (
+              <Typography variant="caption" color="info.main">
+                (Обновление в фоне...)
+              </Typography>
+            )}
+          </Box>
+        </Box>
+        
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title="Обычное обновление (проверка новых данных)">
+            <Button
+              variant="outlined"
+              startIcon={<RefreshIcon />}
+              onClick={handleSoftRefresh}
+              disabled={isFetching}
+            >
+              {isFetching ? 'Обновление...' : 'Обновить'}
+            </Button>
+          </Tooltip>
+          
+          <Tooltip title="Принудительное обновление (сброс кэша)">
+            <Button
+              variant="contained"
+              startIcon={<RefreshIcon />}
+              onClick={handleForceRefresh}
+              disabled={isFetching}
+              color="primary"
+            >
+              Сбросить кэш
+            </Button>
+          </Tooltip>
+        </Box>
       </Box>
 
+      {/* Уведомление об устаревших данных */}
+      {isStale && !isFetching && (
+        <Alert 
+          severity="warning" 
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleSoftRefresh}>
+              Обновить
+            </Button>
+          }
+        >
+          Доступна новая версия данных. Нажмите "Обновить" для загрузки.
+        </Alert>
+      )}
+
+      {/* Информация об импорте CSV */}
       <Collapse in={importInfo.open && importInfo.importedComputers.length > 0}>
         <Alert
           severity="info"
           action={
-            <IconButton
-              aria-label="close"
-              color="inherit"
-              size="small"
-              onClick={handleCloseImportInfo}
-            >
+            <IconButton size="small" onClick={handleCloseImportInfo}>
               <CloseIcon fontSize="inherit" />
             </IconButton>
           }
           sx={{ mb: 2 }}
         >
-          <Typography variant="subtitle1" gutterBottom>
-            Недавно были импортированы компьютеры через CSV:
-          </Typography>
-          <Box component="ul" sx={{ pl: 2, mb: 0 }}>
-            {importInfo.importedComputers.map((computer, index) => (
+          <Typography variant="subtitle2">Недавно импортированные компьютеры:</Typography>
+          <Box component="ul" sx={{ pl: 2, mb: 0, maxHeight: 200, overflow: 'auto' }}>
+            {importInfo.importedComputers.slice(0, 5).map((computer, index) => (
               <li key={index}>
                 {computer.computer_name} ({computer.ip_address})
               </li>
             ))}
+            {importInfo.importedComputers.length > 5 && (
+              <li>... и еще {importInfo.importedComputers.length - 5}</li>
+            )}
           </Box>
         </Alert>
       </Collapse>
 
+      {/* Фильтры */}
       <ChangesFilter 
         filters={filters}
         onFilterChange={handleFilterChange}
-        onApplyFilters={handleApplyFilters}
+        onApplyFilters={() => {}} // Фильтрация уже через useMemo
         onClearFilters={handleClearFilters}
-        loading={loading}
+        loading={isLoading}
       />
 
+      {/* Ошибка */}
       {error && (
-        <Typography color="error" sx={{ mb: 2 }}>
-          {error}
-        </Typography>
+        <Alert 
+          severity="error" 
+          sx={{ mb: 2 }}
+          action={
+            <Button color="inherit" size="small" onClick={handleForceRefresh}>
+              Повторить
+            </Button>
+          }
+        >
+          {error.message || 'Не удалось загрузить историю изменений'}
+        </Alert>
       )}
 
+      {/* Таблица */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -190,62 +274,73 @@ export default function ChangesPage() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {loading ? (
+            {showLoadingOverlay ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Загрузка...
+                <TableCell colSpan={5} align="center">
+                  <Box sx={{ py: 4 }}>
+                    <Typography>Загрузка данных...</Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : filteredChanges.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Нет данных для отображения
+                <TableCell colSpan={5} align="center">
+                  <Box sx={{ py: 4 }}>
+                    <Typography>Нет данных для отображения</Typography>
+                    {Object.values(filters).some(v => v) && (
+                      <Button size="small" onClick={handleClearFilters} sx={{ mt: 1 }}>
+                        Сбросить фильтры
+                      </Button>
+                    )}
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (
               filteredChanges.map((change) => (
-                <TableRow key={change.id}>
+                <TableRow key={change.id} hover>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Chip 
                         label={change.computer_name || 'Импорт из CSV'} 
                         variant="outlined"
-                        sx={{ mr: 1 }}
+                        size="small"
                       />
-                      <Typography variant="body2" color="text.secondary">
-                        {change.computer_ip || ''}
-                      </Typography>
+                      {change.computer_ip && (
+                        <Typography variant="body2" color="text.secondary">
+                          {change.computer_ip}
+                        </Typography>
+                      )}
                     </Box>
                   </TableCell>
                   <TableCell>
                     <ChangeDescription description={change.change_description} />
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Avatar 
                         sx={{ 
-                          width: 32, 
-                          height: 32, 
-                          mr: 1,
-                          bgcolor: change.user.id === user?.id ? 'primary.main' : 'default'
+                          width: 28, 
+                          height: 28, 
+                          bgcolor: change.user.id === user?.id ? 'primary.main' : 'grey.400',
+                          fontSize: '0.875rem'
                         }}
                       >
-                        {change.user.username.charAt(0).toUpperCase()}
+                        {change.user.username?.charAt(0).toUpperCase() || '?'}
                       </Avatar>
-                      <Typography>
+                      <Typography variant="body2">
                         {change.user.username}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography>
-                        {change.user.first_name + " " + change.user.last_name}
-                      </Typography>
-                    </Box>
+                    <Typography variant="body2">
+                      {`${change.user.first_name || ''} ${change.user.last_name || ''}`.trim() || '-'}
+                    </Typography>
                   </TableCell>
                   <TableCell>
-                    {formatDateTime(change.change_date)}
+                    <Typography variant="body2" noWrap>
+                      {formatDateTime(change.change_date)}
+                    </Typography>
                   </TableCell>
                 </TableRow>
               ))
