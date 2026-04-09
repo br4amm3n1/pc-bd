@@ -217,3 +217,74 @@ class ChangesViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Changes.objects.select_related('user', 'computer').all()
     serializer_class = ChangesSerializer
     permission_classes = [IsAdministrator|permissions.IsAdminUser, permissions.IsAuthenticated]
+
+    @action(detail=False, methods=['get'])
+    def version(self, request):
+        """
+        Легковесный эндпоинт для проверки версии изменений.
+        Возвращает timestamp последнего изменения и общее количество записей.
+        """
+        from django.db.models import Max
+        
+        last_change = Changes.objects.aggregate(
+            last_modified=Max('change_date')
+        )
+        
+        total_count = Changes.objects.count()
+        
+        if last_change['last_modified']:
+            version = int(last_change['last_modified'].timestamp())
+            last_modified = last_change['last_modified'].isoformat()
+        else:
+            version = 0
+            last_modified = None
+        
+        from django.core.cache import cache
+        etag = cache.get('changes_etag')
+        if not etag:
+            import hashlib
+            etag = hashlib.md5(f"{version}:{total_count}".encode()).hexdigest()
+            cache.set('changes_etag', etag, 60)  # Кэшируем ETag на минуту
+        
+        return Response({
+            'version': str(version),
+            'total_count': total_count,
+            'last_modified': last_modified,
+            'etag': etag
+        })
+
+    @action(detail=False, methods=['head'])
+    def head_version(self, request):
+        """
+        HEAD запрос для проверки версии без тела ответа.
+        """
+        from django.db.models import Max
+        
+        last_change = Changes.objects.aggregate(
+            last_modified=Max('change_date')
+        )
+        
+        total_count = Changes.objects.count()
+        
+        if last_change['last_modified']:
+            version = int(last_change['last_modified'].timestamp())
+            last_modified = last_change['last_modified'].strftime('%a, %d %b %Y %H:%M:%S GMT')
+        else:
+            version = 0
+            last_modified = None
+        
+        from django.core.cache import cache
+        etag = cache.get('changes_etag')
+        if not etag:
+            import hashlib
+            etag = hashlib.md5(f"{version}:{total_count}".encode()).hexdigest()
+            cache.set('changes_etag', etag, 60)
+        
+        response = Response(status=200)
+        response['ETag'] = f'"{etag}"'
+        if last_modified:
+            response['Last-Modified'] = last_modified
+        response['X-Total-Count'] = total_count
+        response['X-Version'] = version
+        
+        return response
