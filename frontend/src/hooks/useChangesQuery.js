@@ -50,7 +50,19 @@ export const useChangesQuery = (filters = {}) => {
       lastVersionRef.current = currentVersion;
       query.refetch();
     }
-  }, [versionData, isVersionFetching, query.data, query.isFetching]);
+  }, [versionData, isVersionFetching, query.data, query.isFetching, query]);
+
+  const isStaleByVersion = useRef(false);
+
+  useEffect(() => {
+    if (!versionData || !query.data) return;
+    
+    const currentVersion = versionData.version;
+    const isStale = lastVersionRef.current !== null && 
+                    lastVersionRef.current !== currentVersion;
+    
+    isStaleByVersion.current = isStale;
+  }, [versionData, query.data]);
 
   return {
     ...query,
@@ -58,6 +70,7 @@ export const useChangesQuery = (filters = {}) => {
     currentVersion: versionData?.version,
     totalCount: versionData?.totalCount,
     lastModified: versionData?.lastModified,
+    isStale: isStaleByVersion.current
   };
 };
 
@@ -65,7 +78,6 @@ export const useCheckVersion = () => {
   const queryClient = useQueryClient();
   
   const checkVersion = async () => {
-    // Принудительно перезапрашиваем версию
     const versionData = await queryClient.fetchQuery({
       queryKey: changesKeys.version(),
       queryFn: getChangesVersion,
