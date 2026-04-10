@@ -12,7 +12,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Update as UpdateIcon
 } from '@mui/icons-material';
-import { useChangesQuery, useRefreshChanges, useInvalidateChanges, useCheckVersion } from '../../hooks/useChangesQuery';
+import { useChangesQuery, useRefreshChanges, useInvalidateChanges } from '../../hooks/useChangesQuery';
 import { AuthContext } from '../../context/AuthContext';
 import { formatDateTime } from '../../utils/dateUtils';
 import ChangesFilter from './ChangesFilter';

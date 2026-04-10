@@ -84,7 +84,6 @@ export const useInvalidateChanges = () => {
   return invalidate;
 };
 
-// Хук для ручного обновления данных
 export const useRefreshChanges = () => {
   const queryClient = useQueryClient();
   
