@@ -9,9 +9,10 @@ import {
   Refresh as RefreshIcon, 
   Close as CloseIcon,
   CloudQueue as CloudQueueIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Update as UpdateIcon
 } from '@mui/icons-material';
-import { useChangesQuery, useRefreshChanges, useInvalidateChanges } from '../../hooks/useChangesQuery';
+import { useChangesQuery, useRefreshChanges, useInvalidateChanges, useCheckVersion } from '../../hooks/useChangesQuery';
 import { AuthContext } from '../../context/AuthContext';
 import { formatDateTime } from '../../utils/dateUtils';
 import ChangesFilter from './ChangesFilter';
@@ -29,6 +30,7 @@ export default function ChangesPage() {
   });
   const [importInfo, setImportInfo] = useState({ open: false, importedComputers: [] });
   const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
   
   const { 
     data: changes = [], 
@@ -36,11 +38,15 @@ export default function ChangesPage() {
     isFetching, 
     isStale,
     error,
-    refetch
+    refetch,
+    isVersionFetching,
+    currentVersion,
+    totalCount: serverTotalCount
   } = useChangesQuery();
   
   const refreshChanges = useRefreshChanges();
   const invalidateChanges = useInvalidateChanges();
+  const checkVersion = useCheckVersion();
 
   const filteredChanges = useMemo(() => {
     return changes.filter(change => {
@@ -84,7 +90,7 @@ export default function ChangesPage() {
     invalidateChanges();
 
     await refreshChanges();
-
+ 
     setShowRefreshSuccess(true);
     setTimeout(() => setShowRefreshSuccess(false), 3000);
   }, [invalidateChanges, refreshChanges]);
@@ -94,6 +100,14 @@ export default function ChangesPage() {
     setShowRefreshSuccess(true);
     setTimeout(() => setShowRefreshSuccess(false), 3000);
   }, [refreshChanges]);
+
+  const handleCheckVersion = useCallback(async () => {
+    const versionInfo = await checkVersion();
+    if (versionInfo) {
+      setShowRefreshSuccess(true);
+      setTimeout(() => setShowRefreshSuccess(false), 3000);
+    }
+  }, [checkVersion]);
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -113,11 +127,14 @@ export default function ChangesPage() {
     setImportInfo(prev => ({ ...prev, open: false }));
   };
 
+  const toggleAutoUpdate = () => {
+    setAutoUpdateEnabled(prev => !prev);
+  };
+
   const showLoadingOverlay = isLoading || (isFetching && changes.length === 0);
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Snackbar для уведомления об успешном обновлении */}
       <Snackbar
         open={showRefreshSuccess}
         autoHideDuration={3000}
@@ -128,7 +145,7 @@ export default function ChangesPage() {
         </Alert>
       </Snackbar>
 
-      {isFetching && !isLoading && (
+      {(isFetching || isVersionFetching) && !isLoading && (
         <LinearProgress sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }} />
       )}
 
@@ -138,13 +155,16 @@ export default function ChangesPage() {
             История изменений
             {!isLoading && changes.length > 0 && (
               <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 2 }}>
-                ({changes.length} записей)
+                ({filteredChanges.length} из {changes.length} записей)
               </Typography>
             )}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
             <Typography variant="caption" color="text.secondary">
-              {isStale ? 'Данные устарели' : 'Данные актуальны'}
+              Версия данных: {currentVersion || '—'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Всего на сервере: {serverTotalCount || changes.length}
             </Typography>
             <Badge 
               color={isStale ? "warning" : "success"} 
@@ -153,15 +173,44 @@ export default function ChangesPage() {
             >
               <CloudQueueIcon fontSize="small" color="action" />
             </Badge>
-            {isFetching && (
+            {isVersionFetching && (
               <Typography variant="caption" color="info.main">
-                (Обновление в фоне...)
+                (Проверка версии...)
+              </Typography>
+            )}
+            {isFetching && !isVersionFetching && (
+              <Typography variant="caption" color="info.main">
+                (Загрузка данных...)
               </Typography>
             )}
           </Box>
         </Box>
         
         <Box sx={{ display: 'flex', gap: 1 }}>
+          <Tooltip title={autoUpdateEnabled ? "Автообновление включено" : "Автообновление выключено"}>
+            <Button
+              variant={autoUpdateEnabled ? "contained" : "outlined"}
+              color={autoUpdateEnabled ? "success" : "default"}
+              startIcon={<UpdateIcon />}
+              onClick={toggleAutoUpdate}
+              size="small"
+            >
+              Авто {autoUpdateEnabled ? "✓" : "✗"}
+            </Button>
+          </Tooltip>
+          
+          <Tooltip title="Проверить версию данных">
+            <Button
+              variant="outlined"
+              startIcon={<CloudQueueIcon />}
+              onClick={handleCheckVersion}
+              disabled={isVersionFetching}
+              size="small"
+            >
+              Проверить
+            </Button>
+          </Tooltip>
+          
           <Tooltip title="Обычное обновление (проверка новых данных)">
             <Button
               variant="outlined"
@@ -187,6 +236,18 @@ export default function ChangesPage() {
         </Box>
       </Box>
 
+      <Alert 
+        severity="info" 
+        sx={{ mb: 2 }}
+        icon={<CloudQueueIcon />}
+      >
+        <Typography variant="body2">
+          Данные автоматически обновляются при изменении версии на сервере. 
+          Проверка версии происходит каждые 15 секунд.
+          {autoUpdateEnabled ? ' ✅ Автообновление активно' : ' ⏸ Автообновление отключено'}
+        </Typography>
+      </Alert>
+
       {isStale && !isFetching && (
         <Alert 
           severity="warning" 
@@ -201,7 +262,6 @@ export default function ChangesPage() {
         </Alert>
       )}
 
-      {/* Информация об импорте CSV */}
       <Collapse in={importInfo.open && importInfo.importedComputers.length > 0}>
         <Alert
           severity="info"
@@ -226,16 +286,14 @@ export default function ChangesPage() {
         </Alert>
       </Collapse>
 
-      {/* Фильтры */}
       <ChangesFilter 
         filters={filters}
         onFilterChange={handleFilterChange}
-        onApplyFilters={() => {}} // Фильтрация уже через useMemo
+        onApplyFilters={() => {}}
         onClearFilters={handleClearFilters}
         loading={isLoading}
       />
 
-      {/* Ошибка */}
       {error && (
         <Alert 
           severity="error" 
@@ -250,7 +308,6 @@ export default function ChangesPage() {
         </Alert>
       )}
 
-      {/* Таблица */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
