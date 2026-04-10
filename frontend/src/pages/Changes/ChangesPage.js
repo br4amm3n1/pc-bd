@@ -30,7 +30,6 @@ export default function ChangesPage() {
   const [importInfo, setImportInfo] = useState({ open: false, importedComputers: [] });
   const [showRefreshSuccess, setShowRefreshSuccess] = useState(false);
   
-  // Используем React Query хуки
   const { 
     data: changes = [], 
     isLoading, 
@@ -38,12 +37,11 @@ export default function ChangesPage() {
     isStale,
     error,
     refetch
-  } = useChangesQuery(filters);
+  } = useChangesQuery();
   
   const refreshChanges = useRefreshChanges();
-  const invalidateChanges = useInvalidateChanges(); // Добавлен хук для инвалидации
+  const invalidateChanges = useInvalidateChanges();
 
-  // Мемоизированная фильтрация
   const filteredChanges = useMemo(() => {
     return changes.filter(change => {
       const parsed = parseDescription(change.change_description);
@@ -67,7 +65,6 @@ export default function ChangesPage() {
     });
   }, [changes, filters]);
 
-  // Поиск CSV импортов
   useEffect(() => {
     const csvImports = changes.filter(change => {
       const parsed = parseDescription(change.change_description);
@@ -83,20 +80,15 @@ export default function ChangesPage() {
     }
   }, [changes]);
 
-  // Принудительное обновление с инвалидацией кэша
   const handleForceRefresh = useCallback(async () => {
-    // Инвалидируем кэш - помечаем данные как устаревшие
     invalidateChanges();
-    
-    // Принудительно перезапрашиваем
+
     await refreshChanges();
-    
-    // Показываем уведомление об успешном обновлении
+
     setShowRefreshSuccess(true);
     setTimeout(() => setShowRefreshSuccess(false), 3000);
   }, [invalidateChanges, refreshChanges]);
 
-  // Обычное обновление без инвалидации (просто проверка)
   const handleSoftRefresh = useCallback(async () => {
     await refreshChanges();
     setShowRefreshSuccess(true);
@@ -136,12 +128,10 @@ export default function ChangesPage() {
         </Alert>
       </Snackbar>
 
-      {/* Индикатор фонового обновления */}
       {isFetching && !isLoading && (
         <LinearProgress sx={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999 }} />
       )}
 
-      {/* Заголовок */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Box>
           <Typography variant="h4" component="h1">
@@ -197,7 +187,6 @@ export default function ChangesPage() {
         </Box>
       </Box>
 
-      {/* Уведомление об устаревших данных */}
       {isStale && !isFetching && (
         <Alert 
           severity="warning" 
