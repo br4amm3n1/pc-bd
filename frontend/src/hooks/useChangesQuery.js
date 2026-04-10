@@ -23,7 +23,7 @@ export const useChangesQuery = (filters = {}) => {
       const data = await getComputersChanges();
       return data;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
     gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
