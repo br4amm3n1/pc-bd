@@ -60,6 +60,22 @@ export const useChangesQuery = (filters = {}) => {
   };
 };
 
+export const useCheckVersion = () => {
+  const queryClient = useQueryClient();
+  
+  const checkVersion = async () => {
+    // Принудительно перезапрашиваем версию
+    const versionData = await queryClient.fetchQuery({
+      queryKey: changesKeys.version(),
+      queryFn: getChangesVersion,
+    });
+    
+    return versionData;
+  };
+  
+  return checkVersion;
+};
+
 export const useChangesVersionQuery = () => {
   return useQuery({
     queryKey: changesKeys.version(),
