@@ -1,4 +1,3 @@
-# computers/views.py
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
@@ -55,7 +54,6 @@ def import_computers_csv(request):
         for row_num, row in enumerate(reader, 1):
             total_rows += 1
             try:
-                # Проверяем, существует ли компьютер с таким именем и IP
                 if Computer.objects.filter(computer_name=row['computer_name'], ip_address=row['ip_address']).exists():
                     raise ValueError(f"Компьютер с именем {row['computer_name']} и IP {row['ip_address']} уже существует")
                 
@@ -157,14 +155,11 @@ class ComputerViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def export_csv(self, request):
-        # Получаем queryset с учетом фильтров
         queryset = self.filter_queryset(self.get_queryset())
         
-        # Создаем HTTP response с заголовком CSV
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="computers_export.csv"'
         
-        # Определяем поля для экспорта (добавлены новые поля)
         field_names = [
             'computer_name', 
             'ip_address', 
@@ -182,7 +177,6 @@ class ComputerViewSet(viewsets.ModelViewSet):
         writer = csv.DictWriter(response, fieldnames=field_names)
         writer.writeheader()
         
-        # Записываем данные
         for computer in queryset:
             writer.writerow({
                 'computer_name': computer.computer_name,
@@ -198,7 +192,6 @@ class ComputerViewSet(viewsets.ModelViewSet):
                 'comment': computer.comment
             })
         
-        # Логируем действие
         if request.user.is_authenticated:
             Changes.objects.create(
                 user=request.user,
@@ -244,7 +237,7 @@ class ChangesViewSet(viewsets.ReadOnlyModelViewSet):
         if not etag:
             import hashlib
             etag = hashlib.md5(f"{version}:{total_count}".encode()).hexdigest()
-            cache.set('changes_etag', etag, 60)  # Кэшируем ETag на минуту
+            cache.set('changes_etag', etag, 60)
         
         return Response({
             'version': str(version),
