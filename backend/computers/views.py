@@ -163,6 +163,8 @@ class ComputerViewSet(viewsets.ModelViewSet):
         field_names = [
             'computer_name', 
             'ip_address', 
+            'mac_address',
+            'institute_name', 
             'location_address', 
             'floor', 
             'office', 
@@ -181,6 +183,8 @@ class ComputerViewSet(viewsets.ModelViewSet):
             writer.writerow({
                 'computer_name': computer.computer_name,
                 'ip_address': computer.ip_address,
+                'mac_address': computer.mac_address,
+                'institute_name': computer.get_institute_name_display(),
                 'location_address': computer.location_address,
                 'floor': computer.floor,
                 'office': computer.office,
