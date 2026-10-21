@@ -17,6 +17,7 @@ import AppsIcon from '@mui/icons-material/Apps';
 import SecurityIcon from '@mui/icons-material/Security';
 import PersonIcon from '@mui/icons-material/Person';
 import BusinessIcon from '@mui/icons-material/Business';
+import LanIcon from '@mui/icons-material/Lan';
 
 export const ComputersFilter = ({ filters, onFilterChange, onClearFilters }) => {
   const hasFilters = Object.values(filters).some(value => value !== '' && value !== undefined);
@@ -73,6 +74,22 @@ export const ComputersFilter = ({ filters, onFilterChange, onClearFilters }) => 
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" color="action" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        <TextField
+          label="MAC-адрес"
+          variant="outlined"
+          size="small"
+          value={filters.mac_address || ''}
+          onChange={(e) => onFilterChange('mac_address', e.target.value)}
+          sx={{ width: 150 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <LanIcon fontSize="small" color="action" />
               </InputAdornment>
             ),
           }}
