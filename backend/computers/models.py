@@ -10,6 +10,7 @@ User = get_user_model()
 
 class Computer(models.Model):
     INSTITUTES = [
+        ('NOTCHOICED', 'Не выбрано')
         ('NIIPZ', 'НИИ ПЗ'),
         ('NIIPHIRM', 'НИИ ФиРМ'),
         ('NIIGENETICS', 'НИИ Генетики')
