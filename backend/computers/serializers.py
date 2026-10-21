@@ -10,6 +10,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ComputerSerializer(serializers.ModelSerializer):
+    institute_name_display = serializers.CharField(
+        source="get_institute_name_display",
+        read_only=True,
+    )
+
     class Meta:
         model = Computer
         fields = '__all__'
