@@ -4,17 +4,32 @@ from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from django.core.mail import send_mail
 from django.conf import settings
+from django.core.validators import RegexValidator
 
 User = get_user_model()
 
 class Computer(models.Model):
+    INSTITUTES = [
+        ('NIIPZ', 'НИИ ПЗ'),
+        ('NIIPHIRM', 'НИИ ФиРМ'),
+        ('NIIGENETICS', 'НИИ Генетики')
+    ]
+
     location_address = models.CharField('Адрес размещения', max_length=255)
+    institute_name = models.CharField('Название института', max_length=100, choices=INSTITUTES, default=INSTITUTES[0][0])
     floor = models.PositiveIntegerField('Этаж')
     office = models.CharField('Кабинет', max_length=50)
     computer_name = models.CharField('Имя компьютера', max_length=100)
     pc_owner = models.CharField('Пользователь компьютера', max_length=100, null=True, blank=True)
     pc_owner_position_at_work = models.CharField('Должность пользователя', max_length=100, null=True, blank=True)
     ip_address = models.GenericIPAddressField('IP-адрес', protocol='IPv4')
+    mac_address = models.CharField("MAC-адрес", max_length=17, blank=True, validators=[
+            RegexValidator(
+                regex=r"^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$",
+                message="Введите MAC-адрес в формате XX:XX:XX:XX:XX:XX или XX-XX-XX-XX-XX-XX",
+            )
+        ],
+    )
     domain = models.CharField('Домен', max_length=100)
     has_kaspersky = models.BooleanField('Установлен Касперский', default=False)
     operating_system = models.CharField('Операционная система', max_length=60)
