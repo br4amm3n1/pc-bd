@@ -9,7 +9,9 @@ class ComputerAdmin(admin.ModelAdmin):
         'pc_owner',
         'pc_owner_position_at_work',
         'ip_address',
+        'mac_address',
         'location_address',
+        'institute_name',
         'floor',
         'office',
         'operating_system',
@@ -26,7 +28,9 @@ class ComputerAdmin(admin.ModelAdmin):
         'computer_name',
         'ip_address',
         'location_address',
-        'office'
+        'office',
+        'institute_name',
+        'mac_address',
     )
     readonly_fields = (
         'created_at',
@@ -37,6 +41,7 @@ class ComputerAdmin(admin.ModelAdmin):
             'fields': (
                 'computer_name',
                 'ip_address',
+                'mac_address',
                 'domain',
                 'operating_system',
                 'has_kaspersky',
@@ -45,6 +50,7 @@ class ComputerAdmin(admin.ModelAdmin):
         }),
         ('Расположение', {
             'fields': (
+                'institute_name',
                 'location_address',
                 'floor',
                 'office'
