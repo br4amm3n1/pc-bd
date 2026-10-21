@@ -50,6 +50,8 @@ export const ComputersTable = ({
             )}
             <TableCell>Имя компьютера</TableCell>
             <TableCell>IP-адрес</TableCell>
+            <TableCell>MAC-адрес</TableCell>
+            <TableCell>Институт</TableCell>
             <TableCell>Адрес</TableCell>
             <TableCell>Кабинет</TableCell>
             <TableCell>Пользователь</TableCell>
@@ -79,6 +81,8 @@ export const ComputersTable = ({
                 )}
                 <TableCell>{computer.computer_name}</TableCell>
                 <TableCell>{computer.ip_address}</TableCell>
+                <TableCell>{computer.mac_address}</TableCell>
+                <TableCell>{computer.institute_name}</TableCell>
                 <TableCell>{computer.location_address}, {computer.floor} этаж</TableCell>
                 <TableCell>{computer.office}</TableCell>
                 <TableCell>{computer.pc_owner || '-'}</TableCell>
