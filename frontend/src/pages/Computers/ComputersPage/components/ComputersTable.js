@@ -82,7 +82,7 @@ export const ComputersTable = ({
                 <TableCell>{computer.computer_name}</TableCell>
                 <TableCell>{computer.ip_address}</TableCell>
                 <TableCell>{computer.mac_address}</TableCell>
-                <TableCell>{computer.institute_name}</TableCell>
+                <TableCell>{computer.get_institute_name_display}</TableCell>
                 <TableCell>{computer.location_address}, {computer.floor} этаж</TableCell>
                 <TableCell>{computer.office}</TableCell>
                 <TableCell>{computer.pc_owner || '-'}</TableCell>
