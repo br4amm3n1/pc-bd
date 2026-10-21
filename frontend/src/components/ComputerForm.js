@@ -10,11 +10,23 @@ import {
   FormControlLabel,
   Checkbox,
   Grid,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
 } from '@mui/material';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 
-// Схема валидации
+
+const INSTITUTES = [
+  { value: 'NOTCHOICED', label: 'Не выбрано' },
+  { value: 'NIIPZ', label: 'НИИ ПЗ' },
+  { value: 'NIIPHIRM', label: 'НИИ ФиРМ' },
+  { value: 'NIIGENETICS', label: 'НИИ Генетики' },
+];
+
 const computerSchema = Yup.object().shape({
   computer_name: Yup.string()
     .required('Обязательное поле')
@@ -27,6 +39,20 @@ const computerSchema = Yup.object().shape({
     .matches(
       /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/,
       'Неверный формат IP-адреса'
+    ),
+  mac_address: Yup.string()
+    .matches(
+      /^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/,
+      {
+        message: 'Введите MAC-адрес в формате XX:XX:XX:XX:XX:XX или XX-XX-XX-XX-XX-XX',
+        excludeEmptyString: true,
+      }
+    ),
+  institute_name: Yup.string()
+    .required('Выберите институт')
+    .oneOf(
+      ['NOTCHOICED', 'NIIPZ', 'NIIPHIRM', 'NIIGENETICS'],
+      'Недопустимое значение'
     ),
   location_address: Yup.string().required('Обязательное поле'),
   floor: Yup.number()
@@ -48,6 +74,8 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
     initialValues: {
       computer_name: computer?.computer_name || '',
       ip_address: computer?.ip_address || '',
+      mac_address: computer?.mac_address || '',
+      institute_name: computer?.institute_name || 'NOTCHOICED',
       location_address: computer?.location_address || '',
       floor: computer?.floor || 0,
       office: computer?.office || '',
@@ -83,6 +111,8 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
       formik.setValues({
         computer_name: computer.computer_name,
         ip_address: computer.ip_address,
+        mac_address: computer.mac_address || '',
+        institute_name: computer.institute_name || 'NOTCHOICED',
         location_address: computer.location_address,
         floor: computer.floor,
         office: computer.office,
@@ -94,7 +124,6 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
         comment: computer.comment,
       });
     } else if (!open) {
-      // Сброс формы при закрытии
       formik.resetForm();
     }
   }, [computer, open, setValues, resetForm]);
@@ -116,6 +145,7 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
                 label="Имя компьютера"
                 value={formik.values.computer_name}
                 onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 error={formik.touched.computer_name && Boolean(formik.errors.computer_name)}
                 helperText={formik.touched.computer_name && formik.errors.computer_name}
               />
@@ -130,11 +160,56 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
                 label="IP-адрес"
                 value={formik.values.ip_address}
                 onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 error={formik.touched.ip_address && Boolean(formik.errors.ip_address)}
                 helperText={formik.touched.ip_address && formik.errors.ip_address}
               />
             </Grid>
             
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                margin="normal"
+                id="mac_address"
+                name="mac_address"
+                label="MAC-адрес"
+                placeholder="AA:BB:CC:DD:EE:FF"
+                value={formik.values.mac_address}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.mac_address && Boolean(formik.errors.mac_address)}
+                helperText={formik.touched.mac_address && formik.errors.mac_address}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <FormControl
+                fullWidth
+                margin="normal"
+                error={formik.touched.institute_name && Boolean(formik.errors.institute_name)}
+              >
+                <InputLabel id="institute_name-label">Институт</InputLabel>
+                <Select
+                  labelId="institute_name-label"
+                  id="institute_name"
+                  name="institute_name"
+                  value={formik.values.institute_name}
+                  label="Институт"
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                >
+                  {INSTITUTES.map((inst) => (
+                    <MenuItem key={inst.value} value={inst.value}>
+                      {inst.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {formik.touched.institute_name && formik.errors.institute_name && (
+                  <FormHelperText>{formik.errors.institute_name}</FormHelperText>
+                )}
+              </FormControl>
+            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -159,6 +234,7 @@ export default function ComputerForm({ open, onClose, computer, onSubmit }) {
                 type="number"
                 value={formik.values.floor}
                 onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
                 error={formik.touched.floor && Boolean(formik.errors.floor)}
                 helperText={formik.touched.floor && formik.errors.floor}
               />
