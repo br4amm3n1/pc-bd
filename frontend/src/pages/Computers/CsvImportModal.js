@@ -15,7 +15,7 @@ import {
 import { CheckCircle, Error } from '@mui/icons-material';
 
 export default function CsvImportModal({ open, onClose, status }) {
-  const { isImporting, importedCount, totalRows, errors, successMessage } = status;
+  const { isImporting, isFinished, importedCount, totalRows, errors, successMessage } = status;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
@@ -29,7 +29,7 @@ export default function CsvImportModal({ open, onClose, status }) {
             </DialogContentText>
             <LinearProgress />
           </>
-        ) : (
+        ) : isFinished ? (
           <>
             {successMessage && (
               <Typography color="primary" paragraph>
@@ -61,7 +61,14 @@ export default function CsvImportModal({ open, onClose, status }) {
               </Typography>
             )}
           </>
-        )}
+        ) : 
+          <>
+            <Typography color="main" sx={{ display: 'flex', alignItems: 'center' }}>
+              <CheckCircle color="main" sx={{ mr: 1 }} />
+              Ожидание файла...
+            </Typography>
+          </>
+        }
       </DialogContent>
 
       <DialogActions>

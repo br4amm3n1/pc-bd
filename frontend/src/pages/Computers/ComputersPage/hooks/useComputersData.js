@@ -13,6 +13,7 @@ export const useComputersData = (showSnackbar) => {
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState({
     isImporting: false,
+    isFinished: false,
     importedCount: 0,
     totalRows: 0,
     errors: [],
@@ -81,6 +82,7 @@ export const useComputersData = (showSnackbar) => {
   const handleCSVImport = useCallback(async (file) => {
     setImportStatus({
       isImporting: true,
+      isFinished: false,
       importedCount: 0,
       totalRows: 0,
       errors: [],
@@ -91,6 +93,7 @@ export const useComputersData = (showSnackbar) => {
       const result = await importComputersFromCSV(file);
       setImportStatus({
         isImporting: false,
+        isFinished: true,
         importedCount: result.imported_count,
         totalRows: result.total_rows,
         errors: result.errors || [],
@@ -101,6 +104,7 @@ export const useComputersData = (showSnackbar) => {
     } catch (error) {
       setImportStatus({
         isImporting: false,
+        isFinished: true,
         importedCount: 0,
         totalRows: 0,
         errors: [error.response?.data?.message || 'Ошибка при импорте CSV файла'],
