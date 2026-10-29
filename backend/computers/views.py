@@ -60,6 +60,8 @@ def import_computers_csv(request):
                 computer = Computer.objects.create(
                     computer_name=row['computer_name'],
                     ip_address=row['ip_address'],
+                    mac_address=row['mac_address'],
+                    institute_name=row['institute_name'],
                     location_address=row['location_address'],
                     floor=int(row['floor']),
                     office=row['office'],
@@ -74,6 +76,8 @@ def import_computers_csv(request):
                 imported_computers.append({
                     'computer_name': computer.computer_name,
                     'ip_address': computer.ip_address,
+                    'mac_address': computer.mac_address,
+                    'institute_name': computer.institute_name,
                     'location': f"{computer.location_address}, каб. {computer.office}",
                     'os': computer.operating_system,
                     'kaspersky': 'Да' if computer.has_kaspersky else 'Нет',
