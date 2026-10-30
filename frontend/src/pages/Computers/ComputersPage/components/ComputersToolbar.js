@@ -86,15 +86,15 @@ export const ComputersToolbar = ({
             onClick={handleExportMenuOpen}
             sx={{ mr: 2 }}
           >
-            Выгрузка
+            Скачать
           </Button>
           <Menu
             anchorEl={exportAnchorEl}
             open={isExportMenuOpen}
             onClose={handleExportMenuClose}
           >
-            <MenuItem onClick={handleExportCSV}>Выгрузка в CSV</MenuItem>
-            <MenuItem onClick={handleExportJSON}>Выгрузка в JSON</MenuItem>
+            <MenuItem onClick={handleExportCSV}>CSV</MenuItem>
+            <MenuItem onClick={handleExportJSON}>JSON</MenuItem>
           </Menu>
           <Button 
             variant="contained" 
