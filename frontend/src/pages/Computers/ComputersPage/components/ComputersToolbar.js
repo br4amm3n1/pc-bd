@@ -1,5 +1,4 @@
-import React from 'react';
-import { Box, Button } from '@mui/material';
+import { Box, Button, Menu, MenuItem } from '@mui/material';
 import { FilterList, CloudUpload, Download, Add } from '@mui/icons-material';
 import DeleteIcon from '@mui/icons-material/Delete';
 
@@ -13,6 +12,27 @@ export const ComputersToolbar = ({
   onAddComputer,
   onOpenImportModal
 }) => {
+  const [exportAnchorEl, setExportAnchorEl] = useState(null);
+  const isExportMenuOpen = Boolean(exportAnchorEl);
+
+  const handleExportMenuOpen = (event) => {
+    setExportAnchorEl(event.currentTarget);
+  };
+
+  const handleExportMenuClose = () => {
+    setExportAnchorEl(null);
+  };
+
+  const handleExportCSV = () => {
+    handleExportMenuClose();
+    onExportCSV();
+  };
+
+  const handleExportJSON = () => {
+    handleExportMenuClose();
+    // onExportJSON();
+  };
+
   return (
     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
       {isAuditor ? (
@@ -62,11 +82,19 @@ export const ComputersToolbar = ({
           <Button 
             variant="outlined" 
             startIcon={<Download />}
-            onClick={onExportCSV}
+            onClick={handleExportMenuOpen}
             sx={{ mr: 2 }}
           >
-            Выгрузка в CSV
+            Выгрузка
           </Button>
+          <Menu
+            anchorEl={exportAnchorEl}
+            open={isExportMenuOpen}
+            onClose={handleExportMenuClose}
+          >
+            <MenuItem onClick={handleExportCSV}>Выгрузка в CSV</MenuItem>
+            <MenuItem onClick={handleExportJSON}>Выгрузка в JSON</MenuItem>
+          </Menu>
           <Button 
             variant="contained" 
             startIcon={<Add />}
