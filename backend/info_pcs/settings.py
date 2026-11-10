@@ -83,8 +83,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 ROOT_URLCONF = 'info_pcs.urls'
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3001",
-    "http://192.168.1.75:3001",
+    "http://tnimcpc.genetics.local:8001"
 ]
 
 TEMPLATES = [
