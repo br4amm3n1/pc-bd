@@ -81,8 +81,12 @@ export const importComputersFromCSV = async (file) => {
 
 export const exportComputersToCSV = async (filters) => {
   try {
+    const clean = Object.fromEntries(
+      Object.entries(filters).filter(([_, v]) => v !== '' && v != null)
+    );
+
     const response = await api.get('/computers/export_csv/', {
-      params: filters,
+      params: clean,
       responseType: 'blob'
     });
     

@@ -2,11 +2,14 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from .models import Computer, Changes
+from .filters import ComputerFilter
 from .serializers import ComputerSerializer, ChangesSerializer
 from django.db import models
 from django.http import HttpResponse
 from rest_framework.permissions import IsAuthenticated, BasePermission
 from rest_framework import status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter
 import json
 import csv
 
@@ -142,9 +145,18 @@ def log_computer_change(request, computer_id):
 class ComputerViewSet(viewsets.ModelViewSet):
     queryset = Computer.objects.all()
     serializer_class = ComputerSerializer
-    
+
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_class = ComputerFilter
+
+    ordering_fields = [
+        'computer_name', 'ip_address', 'institute_name',
+        'floor', 'office', 'pc_owner', 'operating_system',
+    ]
+    ordering = ['computer_name']
+
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'export_csv', 'changes']:
             permission_classes = [permissions.IsAuthenticated, IsAuditor|IsAdministrator|permissions.IsAdminUser]
         else:
             permission_classes = [IsAdministrator|permissions.IsAdminUser]
